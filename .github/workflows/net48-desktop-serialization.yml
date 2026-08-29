@@ -1,0 +1,63 @@
+name: CommonServiceLocator net48 desktop serialization
+
+on:
+  push:
+    branches:
+      - ci/net48-desktop-serialization-3e57017
+
+jobs:
+  focused-net48-tests:
+    name: Focused tests on Microsoft .NET Framework
+    runs-on: windows-2022
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Confirm candidate under test
+        shell: pwsh
+        run: |
+          $candidate = "3e57017e34becab4e9fcf96ef051b02ce0851949"
+          $actual = git rev-parse HEAD^
+          Write-Host "Product candidate: $candidate"
+          Write-Host "CI-only commit parent: $actual"
+          if ($actual -ne $candidate) {
+            throw "The CI commit is not based directly on the product candidate."
+          }
+
+      - name: Report Microsoft .NET Framework runtime
+        shell: powershell
+        run: |
+          $full = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full'
+          $runtime = [System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory()
+          $mscorlib = Get-Item (Join-Path $runtime 'mscorlib.dll')
+          Write-Host "PowerShell CLR: $([Environment]::Version)"
+          Write-Host "Microsoft .NET Framework Release: $($full.Release)"
+          Write-Host "Microsoft .NET Framework Version: $($full.Version)"
+          Write-Host "Microsoft CLR directory: $runtime"
+          Write-Host "Microsoft mscorlib product version: $($mscorlib.VersionInfo.ProductVersion)"
+
+      - name: Report .NET SDK
+        shell: pwsh
+        run: dotnet --info
+
+      - name: Run focused net48 serialization tests
+        shell: pwsh
+        run: |
+          dotnet test test/CommonServiceLocator.Tests.csproj `
+            --configuration Release `
+            --framework net48 `
+            --filter "FullyQualifiedName~ServiceLocation.Tests.ActivationExceptionDesktopSerializationFixture" `
+            --logger "console;verbosity=detailed" `
+            --diag TestResults/net48-vstest.diag.log
+
+      - name: Upload VSTest diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: net48-vstest-diagnostic-log
+          path: TestResults/net48-vstest.diag.log
+          if-no-files-found: error
