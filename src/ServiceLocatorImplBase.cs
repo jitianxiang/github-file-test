@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Reflection;
 
 namespace CommonServiceLocator
 {
@@ -179,6 +180,18 @@ namespace CommonServiceLocator
                     if (!hasCurrent)
                     {
                         yield break;
+                    }
+
+                    if (serviceType != null &&
+                        (current == null || !serviceType.GetTypeInfo().IsAssignableFrom(current.GetType().GetTypeInfo())))
+                    {
+                        string actualTypeName = current == null ? "null" : current.GetType().FullName;
+                        InvalidCastException exception = new InvalidCastException(
+                            $"The instance of type {actualTypeName} cannot be assigned to service type {serviceType.FullName}.");
+
+                        throw new ActivationException(
+                            FormatActivateAllExceptionMessage(exception, serviceType),
+                            exception);
                     }
 
                     yield return current;
