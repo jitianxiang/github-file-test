@@ -4,6 +4,10 @@
 
 This file explains the expected semantics IServiceLocator implementations must implement to properly conform to this interface, and a few implementation notes.
 
+### Ambient provider scopes
+
+`ServiceLocator.PushLocatorProvider` temporarily replaces the ambient provider until its returned `IDisposable` is disposed. These scopes are process-wide: changes are visible to every thread and asynchronous control flow, rather than being isolated through thread-local or `AsyncLocal` state. Scopes can be nested and disposed out of order. A direct `SetLocatorProvider` call supersedes all existing scopes, so subsequently disposing their stale tokens does not replace the explicitly set provider.
+
 ### Specification 
 
 ```GetInstance(Type, string)```
