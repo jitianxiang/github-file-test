@@ -65,9 +65,11 @@ namespace CommonServiceLocator
         /// <returns>A sequence of instances of the requested <paramref name="serviceType"/>.</returns>
         public virtual IEnumerable<object> GetAllInstances(Type serviceType)
         {
+            IEnumerable<object> instances;
+
             try
             {
-                return DoGetAllInstances(serviceType);
+                instances = DoGetAllInstances(serviceType);
             }
             catch (Exception ex)
             {
@@ -75,6 +77,8 @@ namespace CommonServiceLocator
                     FormatActivateAllExceptionMessage(ex, serviceType),
                     ex);
             }
+
+            return instances == null ? null : EnumerateAllInstances(instances, serviceType);
         }
 
         /// <summary>
@@ -134,6 +138,53 @@ namespace CommonServiceLocator
         /// <param name="serviceType">Type of service requested.</param>
         /// <returns>Sequence of service instance objects.</returns>
         protected abstract IEnumerable<object> DoGetAllInstances(Type serviceType);
+
+        private IEnumerable<object> EnumerateAllInstances(IEnumerable<object> instances, Type serviceType)
+        {
+            IEnumerator<object> enumerator;
+
+            try
+            {
+                enumerator = instances.GetEnumerator();
+            }
+            catch (Exception ex)
+            {
+                throw new ActivationException(
+                    FormatActivateAllExceptionMessage(ex, serviceType),
+                    ex);
+            }
+
+            using (enumerator)
+            {
+                while (true)
+                {
+                    bool hasCurrent;
+                    object current = null;
+
+                    try
+                    {
+                        hasCurrent = enumerator.MoveNext();
+                        if (hasCurrent)
+                        {
+                            current = enumerator.Current;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ActivationException(
+                            FormatActivateAllExceptionMessage(ex, serviceType),
+                            ex);
+                    }
+
+                    if (!hasCurrent)
+                    {
+                        yield break;
+                    }
+
+                    yield return current;
+                }
+            }
+        }
 
         /// <summary>
         /// Format the exception message for use in an <see cref="ActivationException"/>
