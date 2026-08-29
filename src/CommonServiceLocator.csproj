@@ -29,8 +29,13 @@
   </PropertyGroup>
 
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0' OR '$(TargetFramework)' == 'netstandard1.0' OR '$(TargetFramework)' == 'netstandard2.0'">
-    <Compile Remove="ActivationException.Desktop.cs" />
+  <!-- Binary exception serialization is retained only for legacy desktop compatibility. -->
+  <ItemGroup>
+    <Compile Remove="Exceptions\ActivationException.Desktop.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46' OR '$(TargetFramework)' == 'net47' OR '$(TargetFramework)' == 'net48'">
+    <Compile Include="Exceptions\ActivationException.Desktop.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.0'">
@@ -38,7 +43,6 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != '' AND '$(TargetFramework)' != 'net40' ">
-    <Compile Remove="Exceptions\ActivationException.Desktop.cs" />
     <Compile Remove="net40\**" />
     <EmbeddedResource Remove="net40\**" />
     <None Remove="net40\**" />

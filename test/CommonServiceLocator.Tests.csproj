@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFrameworks>net7.0;net48</TargetFrameworks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -9,10 +9,22 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
     <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
+    <!-- Required by the .NET Framework MSTest adapter when it is hosted by Mono. -->
+    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" PrivateAssets="all" Condition="'$(TargetFramework)' == 'net48'" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\src\CommonServiceLocator.csproj" />
   </ItemGroup>
+
+  <Target Name="BuildAllLibraryTargetFrameworks"
+          BeforeTargets="Build"
+          Condition="'$(TargetFramework)' == 'net7.0' AND '$(DesignTimeBuild)' != 'true'">
+    <MSBuild Projects="..\src\CommonServiceLocator.csproj"
+             Targets="Build"
+             BuildInParallel="$(BuildInParallel)"
+             Properties="Configuration=$(Configuration)"
+             RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" />
+  </Target>
 
 </Project>

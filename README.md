@@ -73,6 +73,6 @@ When throwing an ActivationException, the original exception MUST be returned as
 
 This class is not part of the specification; consumers should only reference the IServiceLocator interface. ServiceLocatorImplBase is provided as a convenience for implementors of IServiceLocator. It implements the correct overload semantics and exception wrapping behavior defined above. You just need to implement the two protected methods DoGetInstance and DoGetAllInstances and the rest will just work. In addition, the two protected methods FormatActivationExceptionMessage and FormatActivateAllExceptionMessage are provided if you wish to customize the error message reported in the exceptions.
 
-### Why is ActivationException a partial class? 
+### Why is ActivationException a partial class?
 
-Implementing ISerializable for exceptions is a .NET best practice for the desktop CLR. However, portable library does not support classic binary serialization. By making this a partial class and segregating the serialization details into a separate file, a portable port can simply leave the .Desktop.cs file out of the project and the incompatible code will be seamlessly removed.
+`ActivationException.Desktop.cs` supplies classic binary-serialization metadata and the serialization constructor solely for legacy .NET Framework compatibility. It is compiled only into the `net46`, `net47`, and `net48` assemblies. The partial is excluded from every .NET Core, .NET Standard, and .NET 5+ assembly; those modern targets do not expose this legacy serialization surface.
