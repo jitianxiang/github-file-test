@@ -44,9 +44,11 @@ namespace CommonServiceLocator
         /// <returns>The requested service instance.</returns>
         public virtual object GetInstance(Type serviceType, string key)
         {
+            object instance;
+
             try
             {
-                return DoGetInstance(serviceType, key);
+                instance = DoGetInstance(serviceType, key);
             }
             catch (Exception ex)
             {
@@ -54,6 +56,20 @@ namespace CommonServiceLocator
                     FormatActivationExceptionMessage(ex, serviceType, key),
                     ex);
             }
+
+            if (serviceType != null &&
+                (instance == null || !serviceType.GetTypeInfo().IsAssignableFrom(instance.GetType().GetTypeInfo())))
+            {
+                string actualTypeName = instance == null ? "null" : instance.GetType().FullName;
+                InvalidCastException exception = new InvalidCastException(
+                    $"The instance of type {actualTypeName} cannot be assigned to service type {serviceType.FullName}.");
+
+                throw new ActivationException(
+                    FormatActivationExceptionMessage(exception, serviceType, key),
+                    exception);
+            }
+
+            return instance;
         }
 
         /// <summary>
